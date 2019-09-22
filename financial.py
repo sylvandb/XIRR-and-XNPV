@@ -1,9 +1,16 @@
+from __future__ import print_function
+
 import datetime
-from scipy import optimize
+try:
+    from scipy import optimize
+except ImportError:
+    import sys
+    print("Missing scipy, using secant method", file=sys.stderr)
+    optimize = None
 
 
 
-def secant_method(tol, f, x0):
+def secant_method(f, x0, tol=0.0001):
     """
     Solve for x where f(x)=0, given starting x0 and tolerance.
 
@@ -78,5 +85,7 @@ def xirr(cashflows,guess=0.1):
 
     """
 
-    #return secant_method(0.0001,lambda r: xnpv(r,cashflows),guess)
-    return optimize.newton(lambda r: xnpv(r,cashflows),guess)
+    return method(lambda r: xnpv(r,cashflows), guess)
+
+
+method = optimize.newton if optimize else secant_method

@@ -8,6 +8,11 @@ except ImportError:
     optimize = None
 
 
+# number of days to use in NPV calculation to represent one year
+# 365.0 or 360.0 are typical
+DAYS_IN_YEAR = 365.0
+
+
 
 def secant_method(f, x0, tol=0.0001):
     """
@@ -72,10 +77,12 @@ def xnpv(rate, cashflows):
       the series (t0) to the date of the cash flow being added to the sum (t).
     """
 
-    chron_order = sorted(cashflows, key=lambda x: x[0])
-    t0 = chron_order[0][0]  # t0 is the date of the first cash flow
+    return _xnpv_ordered(rate, sorted(cashflows, key=lambda x: x[0]))
 
-    return sum(cf / (1 + rate) ** ((t - t0).days / 365.0) for (t, cf) in chron_order)
+def _xnpv_ordered(rate, chron_order):
+    """ Implements xnpv, see xnpv(). Assumes cashflows are ordered by date."""
+    t0 = chron_order[0][0]  # t0 is the date of the first cash flow
+    return sum(cf / (1 + rate) ** ((t - t0).days / DAYS_IN_YEAR) for (t, cf) in chron_order)
 
 
 def xirr(cashflows, guess=0.1):
@@ -113,7 +120,8 @@ def xirr(cashflows, guess=0.1):
       not fail gracefully in cases where there is no solution.
     """
 
-    return method(lambda r: xnpv(r, cashflows), guess)
+    cashflows = sorted(cashflows, key=lambda x: x[0])
+    return method(lambda r: _xnpv_ordered(r, cashflows), guess)
 
 
 method = optimize.newton if optimize else secant_method

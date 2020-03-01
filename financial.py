@@ -12,6 +12,9 @@ except ImportError:
 # 365.0 or 360.0 are typical
 DAYS_IN_YEAR = 365.0
 
+# hack for negative rates
+DO_HACK = True
+
 
 
 def secant_method(f, x0, tol=0.0001):
@@ -79,13 +82,36 @@ def xnpv(rate, cashflows):
 
     return _xnpv_ordered(rate, sorted(cashflows, key=lambda x: x[0]))
 
-def _xnpv_ordered(rate, chron_order):
+
+def _xnpv_ordered(r, c):
+    """ Switch xnpv implementation on first call, according to DO_HACK."""
+    _xnpv_ordered = _xnpv_ordered_DO_HACK if DO_HACK else _xnpv_ordered_simple
+    return _xnpv_ordered(r, c)
+
+def _xnpv_ordered_DO_HACK(rate, chron_order):
     """ Implements xnpv, see xnpv(). Assumes cashflows are ordered by date."""
+    sign = 1.0
+    rate += sign
+    if rate < 0.0:
+        # negative number cannot be raised to a fractional power
+        # can we approximate?
+        sign = -sign
+        rate *= sign
+        #sflows = sorted(chron_order, key=lambda x: x[0])
+        #flow_dates = [d for d, _ in sflows]
+        #flow_vals = [v for _, v in sflows]
+        #chron_order = zip(flow_dates, reversed(flow_vals))
     t0 = chron_order[0][0]  # t0 is the date of the first cash flow
-    return sum(cf / (1 + rate) ** ((t - t0).days / DAYS_IN_YEAR) for (t, cf) in chron_order)
+    return sign * sum(cf / rate ** ((t - t0).days / DAYS_IN_YEAR) for (t, cf) in chron_order)
+
+def _xnpv_ordered_simple(rate, chron_order):
+    """ Implements xnpv, see xnpv(). Assumes cashflows are ordered by date."""
+    rate += 1.0
+    t0 = chron_order[0][0]  # t0 is the date of the first cash flow
+    return sum(cf / rate ** ((t - t0).days / DAYS_IN_YEAR) for (t, cf) in chron_order)
 
 
-def xirr(cashflows, guess=0.1):
+def xirr(cashflows, guess=None):
     """
     Calculate the Internal Rate of Return of a series of cashflows, possibly at
     irregular intervals.
@@ -121,6 +147,8 @@ def xirr(cashflows, guess=0.1):
     """
 
     cashflows = sorted(cashflows, key=lambda x: x[0])
+    if guess is None:
+        guess = 0.1 if abs(cashflows[0][1]) <= abs(cashflows[-1][1]) else -0.1
     return method(lambda r: _xnpv_ordered(r, cashflows), guess)
 
 

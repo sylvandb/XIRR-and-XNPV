@@ -147,9 +147,17 @@ def xirr(cashflows, guess=None):
     """
 
     cashflows = sorted(cashflows, key=lambda x: x[0])
-    if guess is None:
-        guess = 0.1 if abs(cashflows[0][1]) <= abs(cashflows[-1][1]) else -0.1
-    return method(lambda r: _xnpv_ordered(r, cashflows), guess)
+    guess = 0.1 if guess is None else guess
+    try:
+        rv = method(lambda r: _xnpv_ordered(r, cashflows), guess)
+        try:
+            n = int(rv)
+        except OverflowError: # cannot convert float('inf') to integer
+            guess = -guess
+            rv = method(lambda r: _xnpv_ordered(r, cashflows), guess)
+    except ZeroDivisionError:
+        rv = method(lambda r: _xnpv_ordered(r, cashflows), -guess)
+    return rv
 
 
 method = optimize.newton if optimize else secant_method

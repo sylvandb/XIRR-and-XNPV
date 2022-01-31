@@ -99,6 +99,14 @@ if __name__ == '__main__':
         print(usage)
         sys.exit(0)
 
+    if '--hack' in sys.argv:
+        sys.argv.remove('--hack')
+        xirr.DO_HACK = True
+
+    if '--nohack' in sys.argv:
+        sys.argv.remove('--nohack')
+        xirr.DO_HACK = False
+
     if sys.argv[1:]:
         if main(sys.argv[1:]):
             print(usage)

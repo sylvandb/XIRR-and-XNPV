@@ -81,6 +81,8 @@ def main(argv=None):
     for d, f in cashflows:
         print(fmt % (d, f))
     print('----------------------')
+    print('%d flows' % (len(cashflows),))
+    print('----------------------')
 
     print('xIRR: %0.2f%%' % (100 * xirr(cashflows),))
 

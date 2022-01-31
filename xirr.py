@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 try:
     from scipy import optimize
 except ImportError:

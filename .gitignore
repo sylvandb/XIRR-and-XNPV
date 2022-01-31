@@ -1,1 +1,3 @@
 *.pyc
+publish.sh
+*flows.txt

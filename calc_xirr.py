@@ -3,10 +3,7 @@
 from __future__ import print_function
 import datetime
 import sys
-try:
-    from xirr import xirr
-except ImportError:
-    from financial import xirr
+from xirr import xirr
 
 
 

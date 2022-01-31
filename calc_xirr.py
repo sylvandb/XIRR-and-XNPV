@@ -2,7 +2,7 @@
 
 import datetime
 import sys
-from xirr import xirr
+from xirr import xirr, cagr
 
 
 
@@ -50,14 +50,17 @@ def parse_flows():
                     raise ValueError("Date wrong length %d not YYYYMMDD" % (len(date),))
                 dates.append(datetime.date(year, month, day))
             except (ValueError, TypeError) as e:
-                print("Not valid date, {YYYYMMDD} {amount}: %s %s\n%s" % (date, flow, e))
+                print("Not valid date, {YYYYMMDD} {amount}: %s %s\nReason: %s" % (date, flow, e))
                 continue
 
             try:
                 flows.append(float(''.join(f for f in flow if f in VALIDNUMBER)))
+                if not flows[-1]:
+                    del flows[-1]
+                    raise ValueError("Zero flow")
             except (ValueError, TypeError) as e:
-                print("Not valid amount, {YYYYMMDD} {amount}: %s %s\n%s" % (date, flow, e))
-                del date[-1]
+                print("Not valid amount, {YYYYMMDD} {amount}: %s %s\nReason: %s" % (date, flow, e))
+                del dates[-1]
                 continue
 
     del cashflows[:]
@@ -67,7 +70,7 @@ def parse_flows():
 
 
 
-def main(argv=None):
+def main(argv=None, guess=None):
 
     if argv:
         cashflows.append(' '.join(argv))
@@ -84,9 +87,13 @@ def main(argv=None):
     print('%d flows' % (len(cashflows),))
     print('----------------------')
 
-    print('xIRR: %0.2f%%' % (100 * xirr(cashflows),))
+    est = cagr(cashflows)
+    print('CAGR: %0.2f%%' % (100 * est,))
+    print('xIRR: %0.2f%%' % (100 * xirr(cashflows, guess=guess or est),))
 
     return 0
+
+
 
 
 if __name__ == '__main__':
@@ -109,10 +116,16 @@ if __name__ == '__main__':
         sys.argv.remove('--nohack')
         xirr.DO_HACK = False
 
+    guess = None
+    if '--guess' in sys.argv:
+        n = sys.argv.index('--guess')
+        guess = float(sys.argv[n + 1])
+        del sys.argv[n:n + 2]
+
     if sys.argv[1:]:
-        if main(sys.argv[1:]):
+        if main(sys.argv[1:], guess=guess):
             print(usage)
             sys.exit(1)
     else:
         print(usage)
-        sys.exit(main())
+        sys.exit(main(guess=guess))

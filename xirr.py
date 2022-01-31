@@ -15,6 +15,18 @@ DO_HACK = True
 
 
 
+# does not account for intervening cash in/out
+def cagr(cashflows):
+    flows = sorted(cashflows, key=lambda x: x[0])
+    # assume most recent flow is negative current value
+    startd = flows[0][0]
+    today = flows[-1][0]
+    value = -flows[-1][1]
+    basis = sum(v for d, v in flows[:len(flows) - 1])
+    years = (today - startd).days / DAYS_IN_YEAR
+    return (value / basis) ** (1 / years) - 1
+
+
 def secant_method(f, x0, tol=0.0001):
     """
     Solve for x where f(x)=0, given starting x0 and tolerance.
@@ -121,7 +133,7 @@ def xirr(cashflows, guess=None):
       integer or floating point number. Cash outflows (investments) are
       represented with negative amounts, and cash inflows (returns) as
       positive amounts.
-    * guess (optional, default = 0.1): a guess at the solution to be used as
+    * guess (optional, default = CAGR): a guess at the solution to be used as
       a starting point for the numerical solution.
 
     Return
@@ -145,7 +157,7 @@ def xirr(cashflows, guess=None):
     """
 
     cashflows = sorted(cashflows, key=lambda x: x[0])
-    guess = 0.1 if guess is None else guess
+    guess = cagr(cashflows) if guess is None else guess
     try:
         rv = method(lambda r: _xnpv_ordered(r, cashflows), guess)
         try:

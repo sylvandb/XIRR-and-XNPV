@@ -100,6 +100,7 @@ def _xnpv_ordered(r, c):
 
 def _xnpv_ordered_DO_HACK(rate, chron_order):
     """ Implements xnpv, see xnpv(). Assumes cashflows are ordered by date."""
+    orate = rate
     sign = 1.0
     rate += sign
     if rate < 0.0:
@@ -112,7 +113,15 @@ def _xnpv_ordered_DO_HACK(rate, chron_order):
         #flow_vals = [v for _, v in sflows]
         #chron_order = zip(flow_dates, reversed(flow_vals))
     t0 = chron_order[0][0]  # t0 is the date of the first cash flow
-    return sign * sum(cf / rate ** ((t - t0).days / DAYS_IN_YEAR) for (t, cf) in chron_order)
+    try:
+        return sign * sum(cf / rate ** ((t - t0).days / DAYS_IN_YEAR) for (t, cf) in chron_order)
+    except Exception as e:
+        print("Exception:", e)
+        if 'division by zero' in str(e):
+            return float('inf')
+        print(orate, rate)
+        print('\n'.join(repr(c) for c in chron_order))
+        raise
 
 def _xnpv_ordered_simple(rate, chron_order):
     """ Implements xnpv, see xnpv(). Assumes cashflows are ordered by date."""

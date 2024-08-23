@@ -118,8 +118,8 @@ def _xnpv_ordered_DO_HACK(rate, chron_order):
     except Exception as e:
         print("Exception:", e)
         if 'division by zero' in str(e):
-            return float('inf')
-        print(orate, rate)
+            return sign * float('inf')
+        print(sign, orate, rate)
         print('\n'.join(repr(c) for c in chron_order))
         raise
 

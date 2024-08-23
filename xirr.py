@@ -116,7 +116,7 @@ def _xnpv_ordered_DO_HACK(rate, chron_order):
     try:
         return sign * sum(cf / rate ** ((t - t0).days / DAYS_IN_YEAR) for (t, cf) in chron_order)
     except Exception as e:
-        print("Exception:", e)
+        #print("Exception:", e)
         if 'division by zero' in str(e):
             return sign * float('inf')
         print(sign, orate, rate)
@@ -174,8 +174,16 @@ def xirr(cashflows, guess=None):
         except OverflowError: # cannot convert float('inf') to integer
             guess = -guess
             rv = method(lambda r: _xnpv_ordered(r, cashflows), guess)
-    except ZeroDivisionError:
-        rv = method(lambda r: _xnpv_ordered(r, cashflows), -guess)
+    except (ZeroDivisionError, TypeError): # '>=' not supported between instances of 'complex' and 'int'
+        for g in (-guess, 1, -1, 0):
+            e = rv = None
+            try:
+                rv = method(lambda r: _xnpv_ordered(r, cashflows), g)
+                break
+            except (ZeroDivisionError, TypeError):
+                if not guess:
+                    print("xirr out of guesses:", e)
+                    #raise
     return rv
 
 
